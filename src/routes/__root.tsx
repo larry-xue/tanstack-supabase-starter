@@ -1,0 +1,99 @@
+import type { QueryClient } from "@tanstack/react-query";
+import {
+  createRootRouteWithContext,
+  HeadContent,
+  Outlet,
+  ScriptOnce,
+  Scripts,
+} from "@tanstack/react-router";
+
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+
+import { Toaster } from "~/lib/components/ui/sonner";
+import { getUserFn } from "~/lib/server/user";
+import { setAuthUser, type AuthStore } from "~/lib/store/auth";
+import appCss from "~/lib/styles/app.css?url";
+
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+  authStore: AuthStore;
+}>()({
+  beforeLoad: async ({ context }) => {
+    const isServer = typeof window === "undefined";
+    if (!isServer && context.authStore.state.status !== "unknown") {
+      return { user: context.authStore.state.user };
+    }
+    const user = await getUserFn();
+    setAuthUser(context.authStore, user);
+    return { user };
+  },
+  head: () => ({
+    meta: [
+      {
+        charSet: "utf-8",
+      },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1",
+      },
+      {
+         title: "TanStarter - TanStack Start + Supabase", 
+      },
+    ],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      {
+        rel: "icon",
+        href: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>",
+      },
+    ],
+  }),
+  component: RootComponent,
+});
+
+function RootComponent() {
+  return (
+    <RootDocument>
+      <Outlet />
+    </RootDocument>
+  );
+}
+
+import { getLocale } from "~/paraglide/runtime";
+
+function RootDocument({ children }: { readonly children: React.ReactNode }) {
+  return (
+    // suppress since we're updating the "dark" class in a custom script below
+    <html suppressHydrationWarning lang={getLocale()}>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <ScriptOnce>
+          {`document.documentElement.classList.toggle(
+            'dark',
+            localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+            )`}
+        </ScriptOnce>
+
+        <div className="app-shell relative flex min-h-screen flex-col font-sans antialiased selection:bg-primary/20 selection:text-primary">
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-4 focus:px-6 focus:py-3 rounded-full bg-primary text-primary-foreground font-medium shadow-lg transition-transform focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            Skip to content
+          </a>
+          {children}
+        </div>
+
+        <Toaster />
+
+        <ReactQueryDevtools buttonPosition="bottom-left" />
+        <TanStackRouterDevtools position="bottom-right" />
+
+        <Scripts />
+      </body>
+    </html>
+  );
+}
