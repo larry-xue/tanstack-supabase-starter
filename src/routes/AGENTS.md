@@ -2,24 +2,42 @@
 
 ## OVERVIEW
 
-- **Framework**: TanStack Router (File-based).
-- **Core**: SSR-ready, client-side data fetching via TanStack Query.
-- **Context**: `{ queryClient, authStore }` injected at root.
+File-based routing for TanStack Start with SSR-aware auth and TanStack Query integration.
 
-## ROUTING MAP
+## STRUCTURE
 
-- `__root.tsx`: Global entry. Handles `beforeLoad` auth & `head` meta.
-- `_layout/`: Auth boundary. Redirects to `/signin` if `context.user` null.
-  - `dashboard.tsx`: Protected dashboard example route.
-- `index.tsx`: Public landing page.
-- `signin.tsx`: Sign-in (email/password + Google).
-- `signup.tsx`: Sign-up (email/password + Google).
-- `auth/callback.tsx`: Completes email confirmation/magic-link callbacks.
-- `$.tsx`: Global 404 catch-all.
+- `__root.tsx`: The global shell. Defines `createRootRouteWithContext` and handles initial auth session hydration.
+- `_layout/`: Directory-based layout group for protected routes.
+  - `route.tsx`: Defines the layout component and auth boundary for all child routes.
+  - `*.tsx`: Individual routes inheriting the `_layout` (e.g., `dashboard.tsx` maps to `/dashboard`).
+- `$.tsx`: Splat/Catch-all route for handling 404 Not Found states.
+- `(group)/`: (Optional) Pathless route groups used for logical organization without affecting URLs.
 
-## DATA FETCHING STRATEGY
+## FILE CONVENTIONS
 
-- **NO Loaders**: Zero data fetching in Router loaders to prevent waterfall/blocking.
-- **TanStack Query**: All data fetched in components via `useQuery` / `useMutation`.
-- **validateSearch**: Use `zod` for type-safe search params where needed.
-- **State Flow**: `beforeLoad` (Auth) -> `useSearch/useParams` -> `useQuery` (Data).
+- `*.tsx`: Used for routes that export a component. Standard for almost all routes.
+- `*.ts`: Use only for routes that solely perform redirects or define logic without a UI.
+- `route.tsx`: Specifically used within directories to define layout components or index routes.
+- `index.tsx`: Maps to the root path of the current directory (e.g., `src/routes/index.tsx` is `/`).
+
+## DATA LOADING
+
+- **CRITICAL RULE: NO LOADERS**: Do not use `loader` functions in `createFileRoute`.
+- **Reason**: To prevent network waterfalls and ensure the UI is immediately responsive.
+- **Pattern**:
+  1. Define `validateSearch` in the route for type-safe query parameters.
+  2. Use `useQuery` or `useSuspenseQuery` within the component to fetch data.
+  3. This allows TanStack Query to handle caching, background refetching, and hydration.
+
+## AUTH (beforeLoad)
+
+- **Pattern**: All auth checks must happen in the `beforeLoad` hook.
+- **Root Auth**: `__root.tsx` fetches the current user session from Supabase to provide it in the context.
+- **Protected Routes**: Layouts like `_layout/route.tsx` check `context.user`. If null, they `throw redirect({ to: '/signin' })`.
+- **Client/Server Sync**: Auth state is synchronized with `src/lib/store/auth.ts` during `beforeLoad`.
+
+## NAVIGATION
+
+- Use the `<Link />` component from `@tanstack/react-router` for all internal navigation.
+- Use `useNavigate()` hook for programmatic navigation.
+- Always prefer type-safe route paths over raw strings.
