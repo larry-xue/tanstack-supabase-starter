@@ -8,6 +8,13 @@ TanStack Start (Vite) + Supabase starter template with:
 - i18n via Paraglide (Inlang)
 - Fly.io deployment via `fly.toml` + `Dockerfile`
 
+## Initialization
+
+```bash
+npx gitpick copy larry-xue/tanstack-supabase-starter my-app
+cd my-app
+```
+
 ## Setup
 
 1. Install dependencies:
@@ -23,7 +30,6 @@ TanStack Start (Vite) + Supabase starter template with:
    ```
 
 3. Fill in required env vars:
-
    - Supabase:
      - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
      - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
