@@ -11,7 +11,7 @@ TanStack Start (Vite) + Supabase starter template with:
 ## Initialization
 
 ```bash
-npx gitpick copy larry-xue/tanstack-supabase-starter my-app
+npx gitpick https://github.com/larry-xue/tanstack-supabase-starter my-app
 cd my-app
 ```
 
